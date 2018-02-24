@@ -51,15 +51,15 @@
 ;;Cette fonction permet de lancer le jeu en fonction des choix du joueur, c'est-à-dire soit joueurVSordinareur soit ordinateurVSjoueur
 (defn lancer-jeu-choix []
 	(println " Perfect !")
-	(println " Shall I defeat you ?")
-	(println " 1 : Yes, try it if you dare")
-	(println " 2 : No, I want to defeat you !")
+	(println " Please choose your gaming mood :")
+	(println " 1 : I want to be the codemaker !")
+	(println " 2 : I want to be the codebreaker !")
 	(println " 3 : After a thought, I don't want to play")
 	(let [choix (read-line)]
-		(cond 
+		(cond
 			(= (compare choix "1") 0) (vs-player)
 			(= (compare choix "2") 0) (vs-device)
-			:else 
+			:else
 			(println " Soo sad, see you late !"))))
 
 ;;****************************************************************************************
@@ -71,16 +71,16 @@
 ;;Elle va récupérer un code générer aléatoirement puis faire les comparaisons afin de décider si l'ordinateur a pu déviner le code secret ou non
 (defn vs-player []
 	(println " Nice, let's begin the game !")
-	(println " So, let's start by entering you code, please choose 4 colors from red, blue, green, yellow, black and white")
+	(println " So, let's start by entering you code, please choose 4 code pegs from red, blue, green, yellow, black and white your code pegs can have the same color Your indications should be on the same line separated by one single space example : red blue black black ")
 	(let [codeSecret (convertirKey (lireCode))] ;;Conversion en clé du code secret lu et qui est correct (vérifier par le code rightColor)
 
-		;;On initialise le nombre d'essais donné par le joueur 
+		;;On initialise le nombre d'essais donné par le joueur
 		(println " How many tries do you give me ?")
 		(println " 1 : 12")
 		(println " 2 : 10")
 		(println " 3 : 8")
 		(println " 4 : 6 (Hmm, easy for me)")
-		;;On créait une boucle sur le nombre de tentatives 
+		;;On créait une boucle sur le nombre de tentatives
 	   	(loop [tentative (valeur-tenta (read-line))
 	   		tp pionsC
 	   		indic []
@@ -90,25 +90,26 @@
 					(println " I have" tentative "tries left")
 					;;On construit le code avec tp qui contient les couleurs que le device peut choisir
 					(let [codeDevice (buildCode (count codeSecret) code indic tp)]
-						(println " Is this the good answer ? If it is at the right place tap good, 
-							if there is a token which color is in your code but not at the right place in mine please tap color, 
-							else tap bad")
+						(println " For eache gueesed code peg if the guess is correct in both color and position type good,if the correct color code peg is placed in a wrong position type color and if the color is wrong type bad. Your indications should be on the same line separated by one single space example : color bad good good")
 						(println " Yours : " codeSecret)
 						(println " Mine : " codeDevice)
-						(let [indiquer (comparerIndic (convertirKey (clojure.string/split (read-line) #" ")) (filtre-indications codeSecret codeDevice (indications codeSecret codeDevice)))] 
+						(let [indiquer (comparerIndic (convertirKey (clojure.string/split (read-line) #" ")) (filtre-indications codeSecret codeDevice (indications codeSecret codeDevice)))]
 							;;compIndic vérifie si l'indication donnée par le joueur correspond à la vraie indication ou non
-							;;Puis on appelle la fonction good qui va permettre de savoir si l'ordinateur à gagner la partie ou non 
+							;;Puis on appelle la fonction good qui va permettre de savoir si l'ordinateur à gagner la partie ou non
 							(if (good indiquer)
 								;;Le device a gagné
-								(println " Yes ! I did it, it was fun, thanks a lot !")
-								;;Sinon il refait son code à partir des choix qu'il peut prendre 
+                (do (println "Yes ! I did it, it was fun, thanks a lot ! do you want to stat another game ? ")
+                  (println " 1 : it was fun, so yes")
+                  (println " 2 : I need a break, so no thanks")
+                  (restart))
+								;;Sinon il refait son code à partir des choix qu'il peut prendre
 								(do (println " Oh too bad, let's retry !")
 									(recur (dec tentative) (bad codeDevice indiquer tp) indiquer codeDevice))))))
-				(println " Oh, I don't have any tries *sad*")))))
-			
+				(println " Oh, I don't have any tries left *sad*")))))
 
 
-;;Cette fonction permet de retirer les couleurs qui ne peuvent pas entrer dans le code Secret 
+
+;;Cette fonction permet de retirer les couleurs qui ne peuvent pas entrer dans le code Secret
 ;;Ce sont les couleurs qui ont été marquées bad dans l'indication donnée par le joueur (et vérifier par les fonctions ci-dessous)
 (defn bad [cS indic tp]
 	(loop [cpt 0
@@ -126,7 +127,7 @@
 
 
 ;;Cette fonction permet de comparer l'indication donné par le joueur et celui trouvé par l'ordinateur
-;;Pour éviter les triches 
+;;Pour éviter les triches
 ;;v1 correspond aux indications tapées par le joueur
 (defn comparerIndic [v1 v2]
 	;;On compare si les deux vecteurs ont la même taille, si ils n'ont pas la même taille, cela signifie que le joueur à mal entré ses indications
@@ -134,23 +135,23 @@
 		;;sinon on compare si c'est les même
 		(loop [cpt 0
 			v v1]
-			;;Si on est pas arrivé au bout du vecteur 
+			;;Si on est pas arrivé au bout du vecteur
 			(if (< cpt (count v1))
 				;;si c'est la même indication donnée par le joueur et l'ordinateur, on continue la vérification
 				(if (= (compare (get v cpt) (get v2 cpt)) 0)
 					;;si ce sont les mêmes valeurs, on passe à la valeur suivante
 					(recur (inc cpt) v)
 					;;Sinon on demande de retaper le code d'indication
-					(do (println " Be careful, you did a mistake, please enter again")
+					(do (println " Be careful, you made a mistake, please try again")
 						(recur 0 (convertirKey (clojure.string/split (read-line) #" ")))))
 				v))
-		;;Si ce n'est pas la même taille, on demande à l'utilisateur de retaper le code 
-		(do (println " Warning, there are lesser indications than the Secret code")
+		;;Si ce n'est pas la même taille, on demande à l'utilisateur de retaper le code
+		(do (println " Warning, there are exactly 4 indications ! give it another try ")
 			(comparerIndic (convertirKey (clojure.string/split (read-line) #" ")) v2))))
 
 
 
-;;Cette fonction permet d'indiquer si le vecteur d'indication contient que des good ou non 
+;;Cette fonction permet d'indiquer si le vecteur d'indication contient que des good ou non
 (defn good [v]
 	(loop [v v]
 		(if (seq v)
@@ -166,9 +167,9 @@
 
 ;;Cette fonction permet de lire en input le code tapé par l'utilisateur, on vérifie si le code est correct ou non
 (defn lireCode []
-		(let [codeSecret (clojure.string/split (read-line) #" ")] 
+		(let [codeSecret (clojure.string/split (read-line) #" ")]
 			(if (not= (count codeSecret) 4)
-				(do (println " AARGHH, Please enter the right number of arguments, there are 4 tokens in a Secret Code") (lireCode))
+				(do (println " AARGHH, Please enter the right number of arguments, there are 4 code pegs in a Secret Code") (lireCode))
 				(if (rightColor codeSecret)
 					codeSecret
 					(lireCode)))))
@@ -183,7 +184,7 @@
 			true)))
 
 
-;;Cette fonction permet à l'ordinateur de construire un code 
+;;Cette fonction permet à l'ordinateur de construire un code
 ;;tabc est le tableau contenant les valeurs possible que le device peut choisir
 ;;indic est le tableau des indications
 ;;cs correspond au code trouvé par l'ordinateur précédemment
@@ -193,14 +194,14 @@
 		res []]
 		;;Si c'est inferieur au code donné par le player, on continue a remplir le vecteur réponse
 		(if (< i taille)
-			;;si cs et indic sont non vides, cela signifie qu'on n'est pas à la premiere combinaison de code qu'on tape  
+			;;si cs et indic sont non vides, cela signifie qu'on n'est pas à la premiere combinaison de code qu'on tape
 			(if (and (seq cs) (seq indic))
 				(if (= (compare (get indic i) :good) 0)
 					(recur (inc i) color (conj res (get cs i)))
 					(if (seq color)
 						;;Sinon l'indication est un bad, on vérifie donc si on peut récupérer des valeurs provenant du tableau des couleurs mal placés
-						(do 
-							(let [c (choixColor i cs tab color)] 
+						(do
+							(let [c (choixColor i cs tab color)]
 								(if (= (compare (second c) 5) 0)
 									;;Si ce n'est pas -1 cela signifie que la couleur retournée est une couleur choisie dans color
 									(recur (inc i) color (conj res (first c)))
@@ -212,8 +213,8 @@
 
 
 ;;Cette fonction permet de choisir une couleur parmi c
-;;Stratégie => faire une rotation 
-;;Renvoie un map 
+;;Stratégie => faire une rotation
+;;Renvoie un map
 (defn choixColor [i code tabC mapC]
 	(if (>= (count mapC) 2)
 		;;Si j'ai plus de 2 éléments dans le map, on est sur de ne pas mettre la même couleur puisqu'on réalise une rotation des couleurs mals placées
@@ -232,13 +233,13 @@
 			mc mapC]
 			(if (< cpt (count mapC))
 				(if (= (compare (get code i) (first (first mc))) 0)
-				;;si c'est la même couleur 
+				;;si c'est la même couleur
 					(recur (inc cpt) mc)
 					(first mc))
 				(first (assoc {} (rand-nth tabC) 5))))))
 
 
-;;Cette fonction construit le vecteur contenant les couleurs qui ne sont pas à la bonne place, renvoie un map avec les valeurs de leur position dans le vecteur 
+;;Cette fonction construit le vecteur contenant les couleurs qui ne sont pas à la bonne place, renvoie un map avec les valeurs de leur position dans le vecteur
 (defn tabColor [code indic]
 	(loop [i 0
 		res {}]
@@ -291,7 +292,7 @@
   ;;Lit le nombre de tentative voulu
   (let [tentative (valeur-tenta (read-line))]
     (let [codeSecret (code-secret 4)]
-      (println " The Boss has chosen 4 colors from red, blue, green, yellow, black and white so let's start !")
+      (println " I choosed 4 colors from red, blue, green, yellow, black and white so let's start !")
       (loop [m 0]
       ;;m correspond au nombre de tentatives réalisées
         (println "You have" (- tentative m) "tries left")
@@ -323,7 +324,7 @@
 (defn restart []
   (let [res (read-line)]
     (if (= (compare res "1") 0)
-      (vs-device)
+      (lancer-jeu-choix)
       (println "Too bad, it was fun ! See you later !"))))
 
 
@@ -452,4 +453,3 @@
           (recur (inc i) (conj res (get v3 i)) (assoc cpt (get v2 i) (dec (get cpt (get v2 i))))))
         (recur (inc i) (conj res (get v3 i)) cpt))
       res)))
-
