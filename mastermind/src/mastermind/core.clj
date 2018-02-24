@@ -98,10 +98,10 @@
 							;;Puis on appelle la fonction good qui va permettre de savoir si l'ordinateur à gagner la partie ou non
 							(if (good indiquer)
 								;;Le device a gagné
-                (do (println "Yes ! I did it, it was fun, thanks a lot ! do you want to stat another game ? ")
-                  (println " 1 : it was fun, so yes")
-                  (println " 2 : I need a break, so no thanks")
-                  (restart))
+                				(do (println "Yes ! I did it, it was fun, thanks a lot ! do you want to stat another game ? ")
+                 		 			(println " 1 : it was fun, so yes")
+                  					(println " 2 : I need a break, so no thanks")
+                  					(restart))
 								;;Sinon il refait son code à partir des choix qu'il peut prendre
 								(do (println " Oh too bad, let's retry !")
 									(recur (dec tentative) (bad codeDevice indiquer tp) indiquer codeDevice))))))
