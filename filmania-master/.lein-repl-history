@@ -1,0 +1,28 @@
+(type [6398 {:title Le Mans, :year 1971, :genres #{Adventure Action}}])
+(count [6398 {:title Le Mans, :year 1971, :genres #{Adventure Action}}])
+[6398 {:title Le Mans, :year 1971, :genres #{Adventure Action}}]
+(first [6398 {:title Le Mans, :year 1971, :genres #{Adventure Action}}])
+(first '([6398 {:title Le Mans, :year 1971, :genres #{Adventure Action}}]))
+(type '([6398 {:title Le Mans, :year 1971, :genres #{Adventure Action}}] [59037 {:title Speed Racer, :year 2008, :genres #{Children Sci-Fi IMAX Action}}] [45981 {:title Hollow Man II, :year 2006, :genres #{Sci-Fi Thriller Horror Action}}] [2721 {:title Trick, :year 1999, :genres #{Comedy Romance}}] [6874 {:title Kill Bill: Vol. 1, :year 2003, :genres #{Thriller Crime Action}}] [45106 {:title American Dreamz, :year 2006, :genres #{Comedy Drama}}] [94735 {:title Walking with Monsters, :year 2005, :genres #{Documentary}}] [65558 {:title Recruiter, The, :year 2008, :genres #{Documentary}}] [81847 {:title Tangled, :year 2010, :genres #{Children Fantasy Comedy Musical IMAX Romance Animation}}] [31367 {:title Chase, The, :year 1994, :genres #{Comedy Thriller Adventure Romance Crime Action}}]))
+exit
+(contains? #{Sci-Fi romance} "romance)
+exit
+(contains? '#{Sci-Fi romance} "romance)
+exit
+(contains? '#{Sci-Fi romance} romance)
+(contains? #{Sci-Fi romance} romance)
+(println "erreur")
+(contains? '#{Sci-Fi romance} romance)
+(contains? '#{Sci-Fi romance} "romance")
+(contain? '#{Sci-Fi romance} "romance")
+(contain? '#{"Sci-Fi" "romance"} "romance")
+(contains? '#{"Sci-Fi" "romance"} "romance")
+exit
+(assoc {:red :blue} {:blue :red})
+(assoc {:red :blue} :blue)
+(conj #{:red :blue} :blue)
+(conj {:red :blue} :blue)
+(conj #{:red :blue} :blue)
+(conj #{:red :blue} {:blue :red})
+(conj #{:red :blue} #{:blue :red})
+exit

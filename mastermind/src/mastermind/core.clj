@@ -33,18 +33,30 @@
 
 
 
+ (defn mypartition-by
+ 	([f? col1]
+  		(if (seq col1)
+   		(mypartition-by f? (rest col1) [(first col1)] [])))
+ 	([f? col1 temp res]
+   		(if (seq col1)
+   			(if (= (f? (first col1))(f? (first temp)))
+     			(mypartition-by f? (rest col1) (conj temp (first col1)) res)
+     			(mypartition-by f? (rest col1) [(first col1)] (conj res (lazy-seq temp ))))
+     	(lazy-seq (conj res temp)))))
+
 
 (defn -main [& args]
   (println "************************************* Welcome to the MatserMind game ! Do you want to start a new game ? *************************************")
-  ;;(println (first (clojure.string/split (read-line) #" "))))
-  (println " 1 : yes,why not?")
-  (println " 2 : WTH! not at all")
+  (mypartition-by odd? [1 1 1 2 2 3 3]))
+  ;;;(println (first (clojure.string/split (read-line) #" "))))
+  ;(println " 1 : yes,why not?")
+  ;(println " 2 : WTH! not at all")
   ;;(println (bad [:red :white :red :black] [:bad :bad :bad :bad] [:red :blue :green :yellow :black :white])))
-  (let [response (read-line)] ;;read-line récupère un string sur la ligne de commande
-    (if (= (compare response "1") 0)
+  ;(let [response (read-line)] ;;read-line récupère un string sur la ligne de commande
+   ;; (if (= (compare response "1") 0)
       ;;On lance le jeu si la reponse est 1
-      (lancer-jeu-choix)
-      (println "Too bad ! see you later ..."))))
+     ;; (lancer-jeu-choix)
+      ;;(println "Too bad ! see you later ..."))))
 
 
 
