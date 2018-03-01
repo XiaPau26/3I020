@@ -112,7 +112,7 @@
 		tab (all-genres)
 		res {}]
 		(if (seq m)
-			(recur (rest m) (rest tab) (assoc res (first tab) (count (films-by-genre (first tab)))))
+			(recur (rest m) (rest tab) (assoc res (keyword (first tab)) (count (films-by-genre (first tab)))))
 			res)))
 
 
@@ -120,7 +120,7 @@
 	(loop [t tab
 		res {}]
 		(if (seq t)
-			(recur (rest t) (assoc res (keyword (first t)) 0))
+			(recur (rest t) (assoc res (keyword (first t))))
 			res)))
 
 
