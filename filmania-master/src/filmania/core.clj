@@ -27,8 +27,8 @@
 	;;(println (tr))
 	;;(println (movie-avg-rating))
 	;;(println (type (first (movie-avg-rating)))))
-	(println ratings)
-	(println (count (rest (csv-seq "resources/ml-latest-small/movies.csv")))))
+	(println (tr)))
+	;;(println (count (rest (csv-seq "resources/ml-latest-small/movies.csv")))))
 
 
 
@@ -133,14 +133,18 @@
 
 (defn parse-rating
   "Construit un enregistrement de film depuis un entrée lue depuis CSV."
-  [movieId rate]
-    {(Integer/parseInt movieId) (Double/valueOf rate)})
+  [userId movieId rate res]
+  	(if (contains? res (Integer/parseInt userId))
+  		(let [valU (get res (Integer/parseInt userId))]
+  			(assoc valU (Integer/parseInt movieId) (Double/valueOf rate)))
+    	{(Integer/parseInt movieId) (Double/valueOf rate)}))
 
 (defn rating-map
   "Construit une map de rating à partir d'une base en CSV."
   [csv]
   (reduce (fn [r [userId movieId rating times]] ;;Prend le map et décompose csv en 3 parties
-            (if-let [rate (parse-rating movieId rating)] ;;Création de la map {:1 5.0}
+  			(println userId)
+            (if-let [rate (parse-rating userId movieId rating r)] ;;Création de la map {:1 5.0}
               (assoc r (Integer/parseInt userId) rate) ;;Construction de la map de retour {:1 {:1 5.0}}
               r))
           {} csv))
