@@ -17,18 +17,30 @@
 (declare moy)
 (declare ratings)
 (declare csv-seq)
+(declare moyTot)
+(declare good-or-not)
+(declare goodUser)
+(declare badUser)
+(declare goodMovies)
+(declare badMovies)
 
 (defn -main [& args]
-	;;(println (card-genres))
-	(println (cptBase))
-	;;(println "Le maximum est" (key (apply max-key val (card-genres))))
-	;;(println "Le minimum est" (key (apply min-key val (card-genres))))
+	;;(println (cptBase))
+	;;(let [card (card-genres)]
+	;;	(println "Le maximum est" (key (apply max-key val card)))
+	;;	(println "Le minimum est" (key (apply min-key val card))))
 	;;(println (pt))
 	;;(println (tr))
-	;;(println (movie-avg-rating))
-	;;(println (type (first (movie-avg-rating)))))
-	(println (tr)))
-	;;(println (count (rest (csv-seq "resources/ml-latest-small/movies.csv")))))
+	;;(println (val (filter #(= (compare 1 (first %)) 0) ratings)))
+	;;(let [note (movie-avg-rating)]
+	;;	(println "Les films les mieux notés sont : ")
+	;;	(println (filter #(> (second %) 2.5) note))
+	;;	(println "Les films les moins biens notés sont : ")
+	;;	(println (filter #(< (second %) 2.5) note))))
+	;;(println "La note moyenne de la base de film est" (moyTot)))
+	;;(println (goodMovies)))
+	(println (badMovies)))
+	
 
 
 
@@ -71,11 +83,15 @@
 	[]
 	(take 10 movies))
 
-(defn cptBase []
+(defn cptBase "Retourne le nombre de films de base"
+	[]
 	(print "Il y a " (count movies) "Films de base"))
 
 
-(defn cptSF []
+
+;;************************************************************************************************
+(defn cptSF "compte le nombre de films ayant comme genre Sci-Fi"
+	[]
 	(loop [m movies
 		cpt 0]
 		(if (seq m)
@@ -84,7 +100,8 @@
 			cpt)))
 
 
-(defn compteurSF [ens car]
+(defn compteurSF "vérifie si l'ensemble ens passé en paramètre contient le genre car"
+	[ens car]
 	(loop [e ens 
 		cpt 0]
 		(if (seq e)
@@ -94,7 +111,10 @@
 			cpt)))
 
 
-(defn all-genres []
+;;************************************************************************************************
+
+(defn all-genres "retourne l'ensemble des genres de film de la base"
+	[]
 	(loop [m movies
 		res #{}]
 		(if (seq m)
@@ -103,7 +123,8 @@
 				res)))
 
 
-(defn films-by-genre [genre]
+(defn films-by-genre "permet d'obtenir la base composée uniquement des films dont le genre est spécifié en paramètre"
+	[genre]
 	(loop [m movies
 		res #{}]
 		(if (seq m)
@@ -112,6 +133,9 @@
 					(conj res (first m))
 					res)))
 			res)))
+
+
+;;************************************************************************************************
 
 (defn contenir [genre ens]
 	(loop [e ens]
@@ -122,7 +146,8 @@
 			false)))
 
 
-(defn card-genres []
+(defn card-genres "construit une table de cardinalité par genre où chaque entrée est de la forme genre card"
+	[]
 	(loop [tab (all-genres)
 		res {}]
 		(if (seq tab)
@@ -130,9 +155,10 @@
 			res)))
 
 
+;;************************************************************************************************
 
 (defn parse-rating
-  "Construit un enregistrement de film depuis un entrée lue depuis CSV."
+  "Construit la map contenant les rates pour un utilisateur depuis une entrée lue depuis CSV."
   [userId movieId rate res]
   	(if (contains? res (Integer/parseInt userId))
   		(let [valU (get res (Integer/parseInt userId))]
@@ -143,7 +169,6 @@
   "Construit une map de rating à partir d'une base en CSV."
   [csv]
   (reduce (fn [r [userId movieId rating times]] ;;Prend le map et décompose csv en 3 parties
-  			(println userId)
             (if-let [rate (parse-rating userId movieId rating r)] ;;Création de la map {:1 5.0}
               (assoc r (Integer/parseInt userId) rate) ;;Construction de la map de retour {:1 {:1 5.0}}
               r))
@@ -157,32 +182,100 @@
 	(take 10 ratings))
 
 
+;;************************************************************************************************
 (defn moy "Calcul la moyenne d'un film id à partir de la map rate"
 	[id]
 	(loop [r ratings
 		somme 0
 		cpt 0]
 		(if (seq r)
-			(if (= (compare (first (first (second (first r)))) id) 0) 
-				(recur (rest r) (+ somme (second (first (second (first r))))) (inc cpt))
+			(if (contains? (second (first r)) id)
+				(recur (rest r) (+ somme (get (second (first r)) id)) (inc cpt)) 
 				(recur (rest r) somme cpt))
 			(if (= cpt 0)
 				{id 0}
 				{id (/ somme cpt)}))))
 
 
-(defn movie-avg-rating []
+(defn movie-avg-rating "retourne une map associant à chaque film de la base movies sa note moyenne dans la base ratings"
+	[]
 	(reduce (fn [r mvs]
-		(if-let [moyenne (moy (first mvs))] ;;(first mvs) permet de récupérer l'id du film 
-				(conj r moyenne)
+		(if-let [moyenne (moy (first mvs))] ;;(first mvs) permet de récupérer l'id du film et on va calculer la moyenne grace à la fonction moy
+				(assoc r (first (first moyenne)) (second (first moyenne)))
 				r))
 	{} movies))
 
 
+;;************************************************************************************************
+
+
+;;Question 2 : Quelle est la note moyenne de la base de films 
+(defn moyTot []
+	(loop [rate (movie-avg-rating)
+		somme 0
+		cpt 0]
+		(if (seq rate)
+			(recur (rest rate) (+ somme (second (first rate))) (inc cpt))
+			(/ somme cpt))))
+
+;;Question 3 
+(defn good-or-not "Retourne vrai si la note moyenne des notes de l'utilisateur sont supérieures à 2.5, faux sinon"
+	[notes]
+	(loop [rate notes
+		somme 0
+		cpt 0]
+		(if (seq rate)
+			(recur (rest rate) (+ somme (second (first rate))) (inc cpt))
+			(if (>= (/ somme cpt) 2.5)
+				true
+				false))))
+
+;;Quels sont les utilisateurs les plus "sympatiques" 
+(defn goodUser "renvoie la liste d'id contenant les ids des personnes ayant une note moyenne supérieure à 2.5"
+	[]
+	(let [rate ratings]
+		(reduce (fn [r x]
+			(if-let [good (good-or-not (second x))]
+				(do (println good)
+					(conj r (first x)))
+				(do (println "fin")
+					r)))
+		[] rate)))
+
+
+
+;;Quels sont les utilisateurs les plus "critiques"
+(defn badUser "renvoie une liste contenant les ids des personnes ayant une note moyenne inférieure à 2.5"
+	[]
+	(let [rate ratings]
+		(reduce (fn [r x]
+			(if-let [good (good-or-not (second x))]
+				r
+				(conj r (first x))))
+		[] rate)))
+
+;;Quel est le film de science-fiction le mieux noté...le moins bien noté
+
+(defn goodMovies "renvoie l'id du film le mieux noté parmi tous les films de science-fiction"
+	[]
+	(let [rate (movie-avg-rating)]
+		(loop [films (films-by-genre "Sci-Fi")
+			res {}]
+			(if (seq films)
+				(recur (rest films) (conj res (filter #(= (compare (first (first films)) (first %)) 0) rate)))
+				(key (apply max-key val res))))))
 
 
 
 
+(defn badMovies "renvoie l'id du film le moins bien noté parmi tous les films de science-fiction"
+	[]
+	(let [rate (movie-avg-rating)]
+	(loop [films (films-by-genre "Sci-Fi")
+		res {}]
+		(if (seq films)
+			(recur (rest films) (conj res (filter #(= (compare (first (first films)) (first %)) 0) rate)))
+			(key (apply min-key val res))))))
 
 
 

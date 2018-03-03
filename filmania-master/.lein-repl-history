@@ -33,3 +33,5 @@ exit
 (assoc {} 3 2.5
 )
 exit
+(get {{:a 2} {:b 3} {:c 5}} :a)
+exit
