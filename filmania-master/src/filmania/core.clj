@@ -11,11 +11,24 @@
 (declare films-by-genre)
 (declare contenir)
 (declare card-genres)
-(declare transfo)
-(declare card)
+(declare tr)
+(declare pt)
+(declare movie-avg-rating)
+(declare moy)
+(declare ratings)
+(declare csv-seq)
 
 (defn -main [& args]
-	(println (card-genres)))
+	;;(println (card-genres))
+	(println (cptBase))
+	;;(println "Le maximum est" (key (apply max-key val (card-genres))))
+	;;(println "Le minimum est" (key (apply min-key val (card-genres))))
+	;;(println (pt))
+	;;(println (tr))
+	;;(println (movie-avg-rating))
+	;;(println (type (first (movie-avg-rating)))))
+	(println ratings)
+	(println (count (rest (csv-seq "resources/ml-latest-small/movies.csv")))))
 
 
 
@@ -41,7 +54,7 @@
       (catch Exception _ nil))))
 
 (defn movie-map
-  "Construit une map de films à partir d'un base en CSV."
+  "Construit une map de films à partir d'une base en CSV."
   [csv]
   (reduce (fn [m [movie-id title-year genres]]
             (if-let [movie (parse-movie title-year genres)]
@@ -54,10 +67,12 @@
 
 (def movies (movie-map (rest (csv-seq movie-filename))))
 
+(defn pt "Prend les 10 premiers éléments de movies"
+	[]
+	(take 10 movies))
+
 (defn cptBase []
-	(print "Il y a ")
-	(print (count movies))
-	(println " Films de base"))
+	(print "Il y a " (count movies) "Films de base"))
 
 
 (defn cptSF []
@@ -108,29 +123,62 @@
 
 
 (defn card-genres []
-	(loop [m movies
-		tab (all-genres)
+	(loop [tab (all-genres)
 		res {}]
-		(if (seq m)
-			(recur (rest m) (rest tab) (assoc res (first tab) (count (films-by-genre (first tab)))))
+		(if (seq tab)
+			(recur (rest tab) (assoc res (first tab) (count (films-by-genre (first tab)))))
 			res)))
 
 
-(defn transfo [tab]
-	(loop [t tab
-		res {}]
-		(if (seq t)
-			(recur (rest t) (assoc res (keyword (first t)) 0))
-			res)))
+
+(defn parse-rating
+  "Construit un enregistrement de film depuis un entrée lue depuis CSV."
+  [movieId rate]
+    {(Integer/parseInt movieId) (Double/valueOf rate)})
+
+(defn rating-map
+  "Construit une map de rating à partir d'une base en CSV."
+  [csv]
+  (reduce (fn [r [userId movieId rating times]] ;;Prend le map et décompose csv en 3 parties
+            (if-let [rate (parse-rating movieId rating)] ;;Création de la map {:1 5.0}
+              (assoc r (Integer/parseInt userId) rate) ;;Construction de la map de retour {:1 {:1 5.0}}
+              r))
+          {} csv))
 
 
-(defn card [res genre]
-	(println genre)
-	(loop [g genre
-		r res]
-		(if (seq g)
-			(recur (rest g) (assoc r (first g) (inc (get r (keyword (first g))))))
-			r)))
+(def ratings (rating-map (rest (csv-seq "resources/ml-latest-small/ratings.csv"))))
+
+(defn tr "prend les 10 premiers éléments de ratings"
+	[]
+	(take 10 ratings))
+
+
+(defn moy "Calcul la moyenne d'un film id à partir de la map rate"
+	[id]
+	(loop [r ratings
+		somme 0
+		cpt 0]
+		(if (seq r)
+			(if (= (compare (first (first (second (first r)))) id) 0) 
+				(recur (rest r) (+ somme (second (first (second (first r))))) (inc cpt))
+				(recur (rest r) somme cpt))
+			(if (= cpt 0)
+				{id 0}
+				{id (/ somme cpt)}))))
+
+
+(defn movie-avg-rating []
+	(reduce (fn [r mvs]
+		(if-let [moyenne (moy (first mvs))] ;;(first mvs) permet de récupérer l'id du film 
+				(conj r moyenne)
+				r))
+	{} movies))
+
+
+
+
+
+
 
 
 

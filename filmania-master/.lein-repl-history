@@ -26,3 +26,10 @@ exit
 (conj #{:red :blue} {:blue :red})
 (conj #{:red :blue} #{:blue :red})
 exit
+(double 1)
+(double "5.0")
+(-main)
+exit
+(assoc {} 3 2.5
+)
+exit
