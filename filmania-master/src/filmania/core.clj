@@ -5,14 +5,10 @@
 
 
 (declare cptBase)
-(declare cptSF)
-(declare compteurSF)
 (declare all-genres)
 (declare films-by-genre)
 (declare contenir)
 (declare card-genres)
-(declare tr)
-(declare pt)
 (declare movie-avg-rating)
 (declare moy)
 (declare ratings)
@@ -23,14 +19,24 @@
 (declare badUser)
 (declare goodMovies)
 (declare badMovies)
+(declare search-By-genre)
+(declare reponse)
+(declare mostRe)
+(declare lessRe)
+(declare bestRate)
+(declare worstRate)
+(declare cptSF)
 
 (defn -main [& args]
+	(println " Welcome to the filmania project !")
+	(reponse))
+
+
 	;;(println (cptBase))
 	;;(let [card (card-genres)]
 	;;	(println "Le maximum est" (key (apply max-key val card)))
 	;;	(println "Le minimum est" (key (apply min-key val card))))
-	;;(println (pt))
-	;;(println (tr))
+
 	;;(println (val (filter #(= (compare 1 (first %)) 0) ratings)))
 	;;(let [note (movie-avg-rating)]
 	;;	(println "Les films les mieux notés sont : ")
@@ -39,10 +45,52 @@
 	;;	(println (filter #(< (second %) 2.5) note))))
 	;;(println "La note moyenne de la base de film est" (moyTot)))
 	;;(println (goodMovies)))
-	(println (badMovies)))
+	;;(println (badMovies)))
 	
+(defn reponse []
+	(println " How can I help you ? ")
+	(println " 1 - How many movies are there in the database ? ")
+	(println " 2 - How many movies for a specific genre ?")
+	(println " 3 - The more representative genre ")
+	(println " 4 - The less representative genre ")
+	(println " 5 - List the bestest movie ")
+	(println " 6 - List the worstest movie ")
+	(println " 7 - List the bestest and worstest movie by a genre ")
+	(println " 8 - List of users who are nice")
+	(println " 9 - List of users who are critics")
+	(println " 10 - Exit ?")
+	(let [rep (read-line)
+		genres (all-genres)
+		rate (movie-avg-rating)]
+		(cond
+			(= (compare rep "1") 0) (println (cptBase)) ;;retourne le nombre de film dans la base de données
+			(= (compare rep "2") 0) (do (println " Please enter a genre, here is the list of genre : " genres) (search-By-genre (read-line) genres 1))
+			(= (compare rep "3") 0) (mostRe)
+			(= (compare rep "4") 0) (lessRe)
+			(= (compare rep "5") 0) (bestRate rate)
+			(= (compare rep "6") 0) (worstRate rate)
+			(= (compare rep "7") 0) (do (println " Please enter a genre, here is the list of genre : " genres) (search-By-genre (read-line) genres 2))
+			(= (compare rep "8") 0) (println (goodUser))
+			(= (compare rep "9") 0) (println (badUser))
+			(= (compare rep "10") 0) (println "Ok, bye, see you soon ")
+			:else
+			(do (println " Ooops, you enter a wrong number, I did not recongnize it, please enter again") 
+				(reponse)))))
 
 
+
+(defn search-By-genre [line genres choix]
+	(if (contains? genres line)
+		(cond 
+			(= choix 1) (let [filmG (films-by-genre line)] 
+				(println "There are" filmG line "movies that to say" (count filmG) "overall"))
+			(= choix 2) (do (println "The bestest" line "movie is " (goodMovies line))
+				(println "The worstest" line "movie is" (badMovies line))))
+		(do (println "I did not rocognize the genre, please enter again ") (search-By-genre (read-line) genres choix))))
+		
+
+
+;;************************************************************************************************
 
 (defn csv-seq
   "Retourne une séquence à partir d'un fichier CSV."
@@ -90,6 +138,17 @@
 
 
 ;;************************************************************************************************
+(defn compteurSF "vérifie si l'ensemble ens passé en paramètre contient le genre car"
+	[ens car]
+	(loop [e ens 
+		cpt 0]
+		(if (seq e)
+			(if (not= (compare (first e) car) 0)
+				(recur (rest e) cpt)
+				1)
+			cpt)))
+
+
 (defn cptSF "compte le nombre de films ayant comme genre Sci-Fi"
 	[]
 	(loop [m movies
@@ -100,15 +159,6 @@
 			cpt)))
 
 
-(defn compteurSF "vérifie si l'ensemble ens passé en paramètre contient le genre car"
-	[ens car]
-	(loop [e ens 
-		cpt 0]
-		(if (seq e)
-			(if (not= (compare (first e) car) 0)
-				(recur (rest e) cpt)
-				1)
-			cpt)))
 
 
 ;;************************************************************************************************
@@ -123,6 +173,15 @@
 				res)))
 
 
+(defn contenir [genre ens]
+	(loop [e ens]
+		(if (seq e)
+			(if (= (compare (first e) genre) 0)
+				true
+				(recur (rest e)))
+			false)))
+
+
 (defn films-by-genre "permet d'obtenir la base composée uniquement des films dont le genre est spécifié en paramètre"
 	[genre]
 	(loop [m movies
@@ -135,15 +194,9 @@
 			res)))
 
 
-;;************************************************************************************************
 
-(defn contenir [genre ens]
-	(loop [e ens]
-		(if (seq e)
-			(if (= (compare (first e) genre) 0)
-				true
-				(recur (rest e)))
-			false)))
+
+;;************************************************************************************************
 
 
 (defn card-genres "construit une table de cardinalité par genre où chaque entrée est de la forme genre card"
@@ -155,7 +208,19 @@
 			res)))
 
 
+(defn mostRe []
+	(println "The genre the most representative is" (key (apply max-key val (card-genres)))))
+
+(defn lessRe []
+	(println "The less representative genre is" (key (apply min-key val (card-genres)))))
+
+
+
+
+
 ;;************************************************************************************************
+;;PART 2
+
 
 (defn parse-rating
   "Construit la map contenant les rates pour un utilisateur depuis une entrée lue depuis CSV."
@@ -218,6 +283,17 @@
 			(recur (rest rate) (+ somme (second (first rate))) (inc cpt))
 			(/ somme cpt))))
 
+
+
+(defn bestRate [note]
+	(println "Les films les mieux notés sont : ")
+	(println (filter #(> (second %) 2.5) note)))
+
+(defn worstRate [note]
+	(println "Les films les moins biens notés sont : ")
+	(println (filter #(< (second %) 2.5) note)))	
+
+
 ;;Question 3 
 (defn good-or-not "Retourne vrai si la note moyenne des notes de l'utilisateur sont supérieures à 2.5, faux sinon"
 	[notes]
@@ -236,10 +312,8 @@
 	(let [rate ratings]
 		(reduce (fn [r x]
 			(if-let [good (good-or-not (second x))]
-				(do (println good)
-					(conj r (first x)))
-				(do (println "fin")
-					r)))
+				(conj r (first x))
+				r))
 		[] rate)))
 
 
@@ -256,7 +330,7 @@
 
 ;;Quel est le film de science-fiction le mieux noté...le moins bien noté
 
-(defn goodMovies "renvoie l'id du film le mieux noté parmi tous les films de science-fiction"
+(defn goodMoviesSF "renvoie l'id du film le mieux noté parmi tous les films de science-fiction"
 	[]
 	(let [rate (movie-avg-rating)]
 		(loop [films (films-by-genre "Sci-Fi")
@@ -268,7 +342,7 @@
 
 
 
-(defn badMovies "renvoie l'id du film le moins bien noté parmi tous les films de science-fiction"
+(defn badMoviesSF "renvoie l'id du film le moins bien noté parmi tous les films de science-fiction"
 	[]
 	(let [rate (movie-avg-rating)]
 	(loop [films (films-by-genre "Sci-Fi")
@@ -278,5 +352,22 @@
 			(key (apply min-key val res))))))
 
 
+(defn goodMovies "renvoie l'id du film le mieux noté parmi tous les films de genre"
+	[genre]
+	(let [rate (movie-avg-rating)]
+		(loop [films (films-by-genre genre)
+			res {}]
+			(if (seq films)
+				(recur (rest films) (conj res (filter #(= (compare (first (first films)) (first %)) 0) rate)))
+				(key (apply max-key val res))))))
 
+
+(defn badMovies "renvoie l'id du film le moins bien noté parmi tous les films de genre"
+	[genre]
+	(let [rate (movie-avg-rating)]
+	(loop [films (films-by-genre genre)
+		res {}]
+		(if (seq films)
+			(recur (rest films) (conj res (filter #(= (compare (first (first films)) (first %)) 0) rate)))
+			(key (apply min-key val res))))))
 
