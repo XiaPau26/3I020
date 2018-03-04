@@ -26,9 +26,13 @@
 (declare bestRate)
 (declare worstRate)
 (declare cptSF)
+(declare pt)
+(declare search-movie-by-name)
+(declare search-rate-by-id)
 
 (defn -main [& args]
 	(println " Welcome to the filmania project !")
+	;;(println (search-rate-by-id 6398)))
 	(reponse))
 
 
@@ -58,7 +62,8 @@
 	(println " 7 - List the bestest and worstest movie by a genre ")
 	(println " 8 - List of users who are nice")
 	(println " 9 - List of users who are critics")
-	(println " 10 - Exit ?")
+	(println " 10 - Rate of a movie")
+	(println " 11 - Exit ?")
 	(let [rep (read-line)
 		genres (all-genres)
 		rate (movie-avg-rating)]
@@ -72,7 +77,14 @@
 			(= (compare rep "7") 0) (do (println " Please enter a genre, here is the list of genre : " genres) (search-By-genre (read-line) genres 2))
 			(= (compare rep "8") 0) (println (goodUser))
 			(= (compare rep "9") 0) (println (badUser))
-			(= (compare rep "10") 0) (println "Ok, bye, see you soon ")
+			(= (compare rep "10") 0) (do 
+				(println " Please enter the name of the movie")
+				(let [search (search-movie-by-name (read-line))]
+					(println search)
+					(if (seq search)
+						(println "The rate is" (val (first (search-rate-by-id (key (first search))))))
+						(println "Did not find the name of the movie"))))
+			(= (compare rep "11") 0) (println "Ok, bye, see you soon ")
 			:else
 			(do (println " Ooops, you enter a wrong number, I did not recongnize it, please enter again") 
 				(reponse)))))
@@ -134,6 +146,12 @@
 (defn cptBase "Retourne le nombre de films de base"
 	[]
 	(print "Il y a " (count movies) "Films de base"))
+
+
+(defn search-movie-by-name "renvoie les informations concernant le films nom"
+	[nom]
+	(filter #(= (compare nom (get (second %) :title)) 0) movies))
+
 
 
 
@@ -371,3 +389,7 @@
 			(recur (rest films) (conj res (filter #(= (compare (first (first films)) (first %)) 0) rate)))
 			(key (apply min-key val res))))))
 
+
+(defn search-rate-by-id [id]
+	(let [rate (movie-avg-rating)]
+		(filter #(= (compare id (first %)) 0) rate)))
