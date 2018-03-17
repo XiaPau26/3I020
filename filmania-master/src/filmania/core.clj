@@ -31,10 +31,12 @@
 (declare search-rate-by-id)
 
 (defn -main [& args]
-	(println " Welcome to the filmania project !")
-	;;(println (search-rate-by-id 6398)))
-	(reponse))
-
+	(println "Welcome to the filmania project !")
+  (println "Ready to start exploring the database or quite ? 0 ready!! 1 umm..not really")
+  (let [rep (read-line)]
+    (if (= (compare rep "0") 0)
+	      (reponse)
+        (println "Good bye see you soon !"))))
 
 	;;(println (cptBase))
 	;;(let [card (card-genres)]
@@ -50,56 +52,60 @@
 	;;(println "La note moyenne de la base de film est" (moyTot)))
 	;;(println (goodMovies)))
 	;;(println (badMovies)))
-	
+
 (defn reponse []
 	(println " How can I help you ? ")
 	(println " 1 - How many movies are there in the database ? ")
-	(println " 2 - How many movies for a specific genre ?")
+	(println " 2 - List of movies of a specific genre ?")
 	(println " 3 - The more representative genre ")
 	(println " 4 - The less representative genre ")
-	(println " 5 - List the bestest movie ")
-	(println " 6 - List the worstest movie ")
-	(println " 7 - List the bestest and worstest movie by a genre ")
+	(println " 5 - List of best movies considering their average rate")
+	(println " 6 - List of worst movies considering their average rate")
+	(println " 7 - List the best and worst movies of a specific genre")
 	(println " 8 - List of users who are nice")
 	(println " 9 - List of users who are critics")
-	(println " 10 - Rate of a movie")
+	(println " 10 - Rate of a specific movie")
 	(println " 11 - Exit ?")
 	(let [rep (read-line)
 		genres (all-genres)
 		rate (movie-avg-rating)]
 		(cond
-			(= (compare rep "1") 0) (println (cptBase)) ;;retourne le nombre de film dans la base de données
-			(= (compare rep "2") 0) (do (println " Please enter a genre, here is the list of genre : " genres) (search-By-genre (read-line) genres 1))
+			(= (compare rep "1") 0) (cptBase) ;;retourne le nombre de film dans la base de données
+			(= (compare rep "2") 0) (do (println " Please enter a genre, here is the list of genres : " genres) (search-By-genre (read-line) genres 1))
 			(= (compare rep "3") 0) (mostRe)
 			(= (compare rep "4") 0) (lessRe)
 			(= (compare rep "5") 0) (bestRate rate)
 			(= (compare rep "6") 0) (worstRate rate)
-			(= (compare rep "7") 0) (do (println " Please enter a genre, here is the list of genre : " genres) (search-By-genre (read-line) genres 2))
+			(= (compare rep "7") 0) (do (println " Please enter a genre, here is the list of genres : " genres) (search-By-genre (read-line) genres 2))
 			(= (compare rep "8") 0) (println (goodUser))
 			(= (compare rep "9") 0) (println (badUser))
-			(= (compare rep "10") 0) (do 
+			(= (compare rep "10") 0) (do
 				(println " Please enter the name of the movie")
 				(let [search (search-movie-by-name (read-line))]
 					(println search)
 					(if (seq search)
 						(println "The rate is" (val (first (search-rate-by-id (key (first search))))))
-						(println "Did not find the name of the movie"))))
+						(println "Did not find the name of the movie !"))))
 			(= (compare rep "11") 0) (println "Ok, bye, see you soon ")
 			:else
-			(do (println " Ooops, you enter a wrong number, I did not recongnize it, please enter again") 
-				(reponse)))))
+			(do (println " Ooops, you entered a wrong number, I did not recongnize it, please enter again")
+				(reponse))))
+  (println "Would you like to continue ? 1:yes 2:no")
+    (if (= (compare (read-line) "1") 0)
+      (reponse)
+      (println "See you soon !")))
 
 
 
 (defn search-By-genre [line genres choix]
 	(if (contains? genres line)
-		(cond 
-			(= choix 1) (let [filmG (films-by-genre line)] 
+		(cond
+			(= choix 1) (let [filmG (films-by-genre line)]
 				(println "There are" filmG line "movies that to say" (count filmG) "overall"))
 			(= choix 2) (do (println "The bestest" line "movie is " (goodMovies line))
 				(println "The worstest" line "movie is" (badMovies line))))
 		(do (println "I did not rocognize the genre, please enter again ") (search-By-genre (read-line) genres choix))))
-		
+
 
 
 ;;************************************************************************************************
@@ -145,7 +151,7 @@
 
 (defn cptBase "Retourne le nombre de films de base"
 	[]
-	(print "Il y a " (count movies) "Films de base"))
+	(print "There are" (count movies) "movies in the data base it's a lot right ? ^^"))
 
 
 (defn search-movie-by-name "renvoie les informations concernant le films nom"
@@ -158,7 +164,7 @@
 ;;************************************************************************************************
 (defn compteurSF "vérifie si l'ensemble ens passé en paramètre contient le genre car"
 	[ens car]
-	(loop [e ens 
+	(loop [e ens
 		cpt 0]
 		(if (seq e)
 			(if (not= (compare (first e) car) 0)
@@ -227,7 +233,7 @@
 
 
 (defn mostRe []
-	(println "The genre the most representative is" (key (apply max-key val (card-genres)))))
+	(println "The most representative genre is" (key (apply max-key val (card-genres)))))
 
 (defn lessRe []
 	(println "The less representative genre is" (key (apply min-key val (card-genres)))))
@@ -273,7 +279,7 @@
 		cpt 0]
 		(if (seq r)
 			(if (contains? (second (first r)) id)
-				(recur (rest r) (+ somme (get (second (first r)) id)) (inc cpt)) 
+				(recur (rest r) (+ somme (get (second (first r)) id)) (inc cpt))
 				(recur (rest r) somme cpt))
 			(if (= cpt 0)
 				{id 0}
@@ -292,7 +298,7 @@
 ;;************************************************************************************************
 
 
-;;Question 2 : Quelle est la note moyenne de la base de films 
+;;Question 2 : Quelle est la note moyenne de la base de films
 (defn moyTot []
 	(loop [rate (movie-avg-rating)
 		somme 0
@@ -304,15 +310,15 @@
 
 
 (defn bestRate [note]
-	(println "Les films les mieux notés sont : ")
+	(println "Best movies : ")
 	(println (filter #(> (second %) 2.5) note)))
 
 (defn worstRate [note]
-	(println "Les films les moins biens notés sont : ")
-	(println (filter #(< (second %) 2.5) note)))	
+	(println "Worst movies : ")
+	(println (filter #(< (second %) 2.5) note)))
 
 
-;;Question 3 
+;;Question 3
 (defn good-or-not "Retourne vrai si la note moyenne des notes de l'utilisateur sont supérieures à 2.5, faux sinon"
 	[notes]
 	(loop [rate notes
@@ -324,7 +330,7 @@
 				true
 				false))))
 
-;;Quels sont les utilisateurs les plus "sympatiques" 
+;;Quels sont les utilisateurs les plus "sympatiques"
 (defn goodUser "renvoie la liste d'id contenant les ids des personnes ayant une note moyenne supérieure à 2.5"
 	[]
 	(let [rate ratings]
