@@ -396,6 +396,18 @@
 
 (setify-cnf '(<=> y (or a b)))
 
+(defn dcnf-aux [f equivs]
+  (match f
+    ([op a b] :seq)
+    (let [[a', equivs1] (dcnf-aux a equivs)
+      [b', equivs2] (dcnf-aux b equivs1)
+      f' (list op a' b')]
+      (if-let [eq (get equivs2 f')]
+        [v equiv2]
+        :else ;;si on a pas trouvé la formule
+        (let [v (symbol (str "$"(inc (count equivs2))))]
+          [v (assoc equiv2 f' v)])
+        ))))
 
 ;; EXERCICE : retirer les clauses qui contiennent un littéral et sa négation
 ;; (a ou non a) => vrai
