@@ -1,0 +1,6 @@
+(reverse '(1))
+(take '(1) 2))
+(take '(1) 2)
+(reverse '(:a :b :c))
+(take 7 (reverse '(:a :b :c)))
+exit
