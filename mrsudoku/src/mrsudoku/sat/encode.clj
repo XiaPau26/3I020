@@ -11,16 +11,36 @@
   (g/cell ex-grille 4 5) => {:status :init, :value 8}
   (g/cell ex-grille 4 6) => {:status :empty})
 
-;; <<A DEFINIR>>
+;; Permet d'encoder un nombre décimal en chiffre binaire
 (declare log-binary)
+
+(defn log-binary [n]
+  (loop [n n
+    res '()]
+    (if (not= n 0)
+      (recur (/(- n (mod n 2)) 2) (conj res (mod n 2)))
+      res)))
+
+
 
 (fact
   (log-binary 5) => '(1 0 1)
   (log-binary 9) => '(1 0 0 1)
   (log-binary 42) => '(1 0 1 0 1 0))
 
-;; <<A DEFINIR>>
+;; Permet de prendre uniquement les n premiers chiffres de la liste passée, si il y a moins de chiffres, on les remplace par x
 (declare pad-seq)
+
+(defn pad-seq [liste x n]
+  (let [liste (reverse liste)
+    res (take liste n)
+    taille (count res)]
+    (loop [res res
+      taille taille]
+      (if (not= taille n)
+        (recur (conj res x) (inc taille))
+        res))))
+    
 
 (fact
   (pad-seq (log-binary 1) 0 4) => '(0 0 0 1)
@@ -44,8 +64,24 @@
   (mkcellbit 6 2 2) => 'x6y2b2
   (mkcellbit 4 3 0) => 'x4y3b0)
 
-;; <<A DEFINIR>>
 (declare encode-num)
+
+
+(defn encode-aux [x y valeur]
+  (if (= valeur 0)
+    '(not (mkcellbit x y valeur))
+
+(defn encode-num 
+  ([x y n]
+    (let [bin (reverse (encode-value n))]
+      (list 'and (encode-aux x y (first bin)) (encode-num x y (rest bin) (count bin)))))
+  ([x y b c]
+    (if (= c 1)
+      (list 'and (encode-aux x y (first b)) true)
+      (list 'and (encode-aux x y (first b) (encode-num x y (rest b) (count b)))))))
+
+
+
 
 (fact
   ;; bits '(0 1 0 1) donne x6y2b0 /\ (not x6y2b1) /\ x6y2b2 /\ (not x6y2 b3)
@@ -66,8 +102,11 @@
        acc
        (list 'and (encode-num cx cy (:value cell)) acc))) true grille))
 
-;; <<A DEFINIR>>
+;; Renvoie toutes les valeurs possibles pour une cellule vide
 (declare encode-vide)
+
+(defn encode-vide [x y]
+  
 
 (fact
  (encode-vide 7 3) ;; encodage d'une cellule vide en cx=7 et cy=3
