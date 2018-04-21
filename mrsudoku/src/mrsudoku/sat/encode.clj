@@ -2,6 +2,7 @@
   (:require [midje.sweet :refer [fact]]
             [mrsudoku.grid :as g]))
 
+
 (def ex-grille @#'g/sudoku-grid)
 
 (fact
@@ -234,16 +235,28 @@
  => false)
 
 
-(declare distinc-cells)
+(declare distinct-cells)
 
-(defn distinc-cells
+(defn and-aux [x1 y1 status1 x2 y2 status2]
+  (list 'and (distinct-pair x1 y1 status1 x2 y2 status2) true))
+
+(defn distinct-cells
   ([liste]
-   (list 'and true (distinc-cells liste (count liste))))
-  ([liste nb]
-   (if (> nb 2)
-     (let [[x1 y1 status1] (first liste)
-           [x2 y2 status2] (second liste)
-
+    (let [liste (reverse liste)]
+      (list 'and true (distinct-cells (first liste) (rest liste) (rest liste)))))
+  ([pre verif backup]
+    (if (and (= (count backup) 1) (= (count verif) 2))
+      (let [[x1 y1 status1] pre
+          [x2 y2 status2] (first verif)]
+        (list 'and (and-aux x1 y1 status1 x2 y2 status2)))
+      (if (seq verif)
+        (let [[x1 y1 status1] pre
+          [x2 y2 status2] (first verif)]
+          (list 'and (and-aux x1 y1 status1 x2 y2 status2) (distinct-cells pre (rest verif) backup)))
+        (recur (first backup) (rest backup) (rest backup))))))
+      
+          
+      
 
 
 
@@ -330,4 +343,7 @@
 
 ;; (encode-sudoku ex-grille)
 ;; => .... attention : formule énorme ! ....
+
+;(defn resolution [grille]
+;  (dpll (d/dcnf grille)))
 

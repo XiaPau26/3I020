@@ -4,3 +4,34 @@
 (reverse '(:a :b :c))
 (take 7 (reverse '(:a :b :c)))
 exit
+(log-binary 2)
+exit
+(load-file encode.clj)
+(load-file "encode.clj")
+(load-file "sat.encode.clj")
+(load-file ~/Desktop/
+(load-file "/Users/paulinexia/Desktop/3I020/3I020_git/3I020/mrsudoku/src/mrsudoku/sat/encode.clj")
+exit
+(load-file "/Users/paulinexia/Desktop/3I020/3I020_git/3I020/mrsudoku/src/mrsudoku/sat/encode.clj")
+exit
+ (load-file "/Users/paulinexia/Desktop/3I020/3I020_git/3I020/mrsudoku/src/mrsudoku/sat/encode.clj")
+exit
+(load-file "Desktop/3I020/3I020_git/3I020/mrsudoku/src/mrsudoku/sat/encode.clj)
+`
+exit
+"
+)
+(load-file "Desktop/3I020/3I020_git/3I020/mrsudoku/src/mrsudoku/sat/encode.clj")
+exit
+(load-file "/Users/paulinexia/Desktop/3I020/3I020_git/3I020/mrsudoku/src/mrsudoku/sat")
+(load-file "/Users/paulinexia/Desktop/3I020/3I020_git/3I020/mrsudoku/src/mrsudoku/sat/encode.clj")
+(autotest)
+(use 'midje.repl)
+(load-file ~/Desktop/3I020/3I020_git/3I020/mrsudoku/src/sat")
+(load-file ~/Desktop/3I020/3I020_git/3I020/mrsudoku/src/mrsudoku/sat")
+(load-file ~/Desktop/3I020/3I020_git/3I020/mrsudoku/src/mrsudoku/sat/encode.clj")
+(load-file "~/Desktop/3I020/3I020_git/3I020/mrsudoku/src/mrsudoku/sat/encode.clj")
+exit
+(load-file /Users/paulinexia/Desktop/3I020/3I020_git/3I020/mrsudoku/src/mrsudoku/sat)
+(load-file "/Users/paulinexia/Desktop/3I020/3I020_git/3I020/mrsudoku/src/mrsudoku/sat")
+(load-file "/Users/paulinexia/Desktop/3I020/3I020_git/3I020/mrsudoku/src/mrsudoku/sat/encode.clj")

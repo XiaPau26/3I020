@@ -7,4 +7,8 @@
 		[org.clojure/core.match "0.3.0-alpha5"]]
   :main ^:skip-aot sudoku-hamissi-xia.core
   :target-path "target/%s"
-  :profiles {:uberjar {:aot :all}})
+  :profiles {:uberjar {:aot :all}
+  			:dev {:dependencies [[midje "1.8.3" :exclusions [org.clojure/clojure]]
+                                  [org.clojure/tools.nrepl "0.2.12"]]
+                   :plugins [[lein-midje "3.2.1"]]}
+             :midje {}})
