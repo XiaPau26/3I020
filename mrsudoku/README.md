@@ -7,3 +7,5 @@ Le jeu du Sudoku en mini-projet.
 
 ==> sans oublier le solveur ...
 
+https://gist.github.com/daveray/1441520
+https://daveray.github.io/seesaw/seesaw.core-api.html

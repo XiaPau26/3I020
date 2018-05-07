@@ -11,6 +11,7 @@
   [grid] (atom {:grid grid}))
 
 (defn change-cell! [ctrl cx cy cell-widget cell]
+  ;; Changing the value of the cell cell in the grid 
   (swap! ctrl #(assoc % :grid (g/change-cell (:grid %) cx cy cell)))
   (invoke-later (v/update-cell-view! cell cell-widget))
   (let [ngrid (:grid (deref ctrl))]
@@ -53,6 +54,7 @@
 (defn cell-input-handler [ctrl cell-widget cell-x cell-y]
   (fn [cell-event]
     (let [doc (.getDocument cell-event)
+      ;Recupere la valeur du input
           input (.getText doc 0 (.getLength doc))]
       ;;(print (str "at cell (" cell-x "," cell-y "): "))
       ;;(println input)
@@ -63,6 +65,7 @@
                              (catch Exception _ nil)))]
         (cell-validate-input! ctrl cell-widget cell-x cell-y val)
         (do
+          (println "I'am going there when I erase my input")
           (cell-clear! ctrl cell-widget cell-x cell-y)
           (invoke-later (text! cell-widget "")))))))
 

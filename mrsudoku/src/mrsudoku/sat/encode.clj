@@ -1,6 +1,7 @@
 (ns mrsudoku.sat.encode
   (:require [midje.sweet :refer [fact]]
-            [mrsudoku.grid :as g]))
+            [mrsudoku.grid :as g]
+            ))
 
 
 (def ex-grille @#'g/sudoku-grid)
@@ -12,16 +13,18 @@
   (g/cell ex-grille 4 5) => {:status :init, :value 8}
   (g/cell ex-grille 4 6) => {:status :empty})
 
-;; Permet d'encoder un nombre décimal en chiffre binaire
+;; <<A DEFINIR>>
 (declare log-binary)
 
-(defn log-binary [n]
-  (loop [n n
-    res '()]
-    (if (not= n 0)
-      (recur (/(- n (mod n 2)) 2) (conj res (mod n 2)))
-      res)))
+(defn log-binary-1[nb]
+  (if ( = nb 0 )
+    '(0)
+    (if ( = nb 1)
+      '(1)
+        (cons (int(mod nb 2)) (log-binary-1 (int (/ nb 2)))))))
 
+(defn log-binary[nb]
+  (reverse (log-binary-1 nb)))
 
 
 (fact
@@ -29,19 +32,25 @@
   (log-binary 9) => '(1 0 0 1)
   (log-binary 42) => '(1 0 1 0 1 0))
 
-;; Permet de prendre uniquement les n premiers chiffres de la liste passée, si il y a moins de chiffres, on les remplace par x
+
+;; <<A DEFINIR>>
 (declare pad-seq)
 
-(defn pad-seq [liste x n]
-  (let [liste (reverse liste)
-    res (take n liste)
-    taille (count res)]
-    (loop [res (reverse res)
-      taille taille]
-      (if (not= taille n)
-        (recur (conj res x) (inc taille))
-        res))))
+(defn list-to-vect[lis]
+  (loop [a lis, res []]
+    (if (seq a)
+      (recur (rest a) (conj res (first a)))
+      res)))
 
+(list-to-vect (log-binary 1))
+
+(defn pad-seq[pas ntr nbr]
+  (if( < (count (list-to-vect pas)) nbr)
+    (loop [res pas]
+      (if (= 0 ( - nbr (count (list-to-vect res))))
+        res
+        (recur (cons ntr res))))
+    pas))
 
 (fact
   (pad-seq (log-binary 1) 0 4) => '(0 0 0 1)
@@ -65,31 +74,33 @@
   (mkcellbit 6 2 2) => 'x6y2b2
   (mkcellbit 4 3 0) => 'x4y3b0)
 
+
+(defn mkcell [cx cy]
+  (map #(mkcellbit cx cy %) (range 4)))
+
+
+;; <<A DEFINIR>>
 (declare encode-num)
 
+(defn num-of-set [row] ;;fonciton qui associe les indexes
+  (loop [a row , cpt (dec (count row)) , res []]
+    (if (seq a)
+      (recur (rest a) (dec cpt) (conj res [cpt (first a)]))
+      res)))
 
-(defn encode-aux [x y valeur bit]
-  (if (= valeur 0)
-    (list 'not (mkcellbit x y bit))
-    (mkcellbit x y bit)))
+(defn encode-num [cx cy v]
+  (let [lis (list-to-vect (encode-value v))]
+    (reduce (fn [res x]
+              (if (= (second x) 0)
+                (list 'and (list 'not (mkcellbit cx cy (first x))) res)
+                 (list 'and (mkcellbit cx cy (first x)) res))) 'true (num-of-set lis))))
 
-(defn encode-num
-  ([x y n]
-    (let [bin (reverse (encode-value n))]
-      (list 'and (encode-aux x y (first bin) 0) (encode-num x y (rest bin) 1))))
-  ([x y bin nbit]
-    (if (= nbit 3)
-      (list 'and (encode-aux x y (first bin) nbit) true)
-      (list 'and (encode-aux x y (first bin) nbit) (encode-num x y (rest bin) (inc nbit))))))
-
-
-
+(num-of-set (list-to-vect (encode-value 5)))
 
 (fact
   ;; bits '(0 1 0 1) donne x6y2b0 /\ (not x6y2b1) /\ x6y2b2 /\ (not x6y2 b3)
   (encode-num 6 2 5) => '(and x6y2b0 (and (not x6y2b1) (and x6y2b2
                                                             (and (not x6y2b3) true))))
-
   ;; bits '(0 0 0 1) donne x6y2b0 /\ (not x6y2b1) /\ (not x6y2b2) /\ (not x6y2 b3)
   (encode-num 2 3 1) => '(and x2y3b0 (and (not x2y3b1) (and (not x2y3b2)
                                                             (and (not x2y3b3) true))))
@@ -105,18 +116,14 @@
        acc
        (list 'and (encode-num cx cy (:value cell)) acc))) true grille))
 
-;; Renvoie toutes les valeurs possibles pour une cellule vide
+;; <<A DEFINIR>>
 (declare encode-vide)
 
-(defn encode-vide
-  ([x y]
-   (list 'or (encode-num x y 9) (encode-vide x y 8)))
-  ([x y n]
-   (if (= n 1)
-     (list 'or (encode-num x y n) false)
-     (list 'or (encode-num x y n) (encode-vide x y (dec n))))))
+(defn encode-vide [cx cy]
+  (reduce (fn [res x]
+           (list 'and (list 'not (encode-num cx cy x)) res)) 'true (conj (range 10 16) 0)))
 
-
+(encode-vide 3 3)
 
 (fact
  (encode-vide 7 3) ;; encodage d'une cellule vide en cx=7 et cy=3
@@ -142,9 +149,6 @@
                                                                (and (not x7y3b3) true))))
                                          false))))))))))
 
-
-
-
 (defn encode-vides
   "Formule d'encodage des cellules vides de la `grille`."
   [grille]
@@ -154,48 +158,42 @@
         (list 'and (encode-vide cx cy) acc)
         acc)) true grille))
 
-
+;; <<A DEFINIR>>
 (declare distinct-empty-empty)
 
-(defn mkdistinct [c l bit]
-  (symbol (str "l" l "c" c "b" bit)))
+(defn mkcellbit2
+  "Créer la variable du `bit` spécifié (entre 0 poids faible
+   et 3 poids fort) pour la cellule située en `cx` (colonne)
+  et `cy` (ligne)."
+  [cx cy bit]
+  (symbol (str "l" cy "c" cx "b" bit)))
 
-(defn empty-empty [c1 l1 c2 l2 bit]
-  (list '<=> (mkdistinct c1 l1 bit) (list 'not (mkdistinct c2 l2 bit))))
 
-
-(defn distinct-empty-empty
-  ([c1 l1 c2 l2]
-    (list 'and (empty-empty c1 l1 c2 l2 0) (distinct-empty-empty c1 l1 c2 l2 1)))
-  ([c1 l1 c2 l2 bit]
-   (if (= bit 3)
-     (list 'and (empty-empty c1 l1 c2 l2 bit) true)
-     (list 'and (empty-empty c1 l1 c2 l2 bit) (distinct-empty-empty c1 l1 c2 l2 (inc bit))))))
-
+(defn distinct-empty-empty [cx1 cy1 cx2 cy2]
+  (loop [res 'false, cpt 0]
+    (if (= cpt 4)
+     res
+     (recur (list 'or (list '<=> (mkcellbit2 cx1 cy1 cpt) (list 'not (mkcellbit2 cx2 cy2 cpt))) res) (inc cpt))
+     )))
 
 (fact
  ;; les cellules entre cx1=2,cy1=3 et cx2=2,cy=5 doivent être distinctes
  (distinct-empty-empty 2 3 2 5)
- => '(and (<=> l3c2b0 (not l5c2b0)) ; bits b0 distincts
-          (and (<=> l3c2b1 (not l5c2b1)) ; b1
-               (and (<=> l3c2b2 (not l5c2b2)) ; b2
-                    (and (<=> l3c2b3 (not l5c2b3))  ; b3
-                         true)))))
+ => '(or (<=> l3c2b0 (not l5c2b0)) ; bits b0 distincts
+          (or (<=> l3c2b1 (not l5c2b1)) ; b1
+               (or (<=> l3c2b2 (not l5c2b2)) ; b2
+                    (or (<=> l3c2b3 (not l5c2b3))  ; b3
+                         false)))))
 
-
-
+;; <<A DEFINIR>>
 (declare distinct-filled-empty)
 
-(defn distinct-filled-empty
-  ([val x y]
-    (let [bin (encode-value val)]
-      (list 'or (encode-aux x y (first bin) 0) (distinct-filled-empty x y (rest bin) 1))))
-  ([x y bin nbit]
-    (if (= nbit 3)
-      (list 'or (encode-aux x y (first bin) nbit) false)
-      (list 'or (encode-aux x y (first bin) nbit) (distinct-filled-empty x y (rest bin) (inc nbit))))))
-
-
+(defn distinct-filled-empty[cval cx2 cy2]
+  (let [lis (list-to-vect (encode-value cval))]
+    (reduce (fn [res x]
+              (if (= (second x) 0)
+                (list 'or (mkcellbit cx2 cy2 (first x)) res)
+                (list 'or (list 'not (mkcellbit cx2 cy2 (first x))) res))) 'false (num-of-set lis))))
 
 (fact
  ;; cval1=5  et cx2=3,cy2=6
@@ -234,31 +232,35 @@
  (distinct-pair 2 3 {:status :init :value 5} 5 6 {:status :init :value 5})
  => false)
 
+;; <<A DEFINIR>>
+(declare distinc-cells)
 
-(declare distinct-cells)
+(defn distinct-cells [seqi]
+  (reduce (fn[res x x2]
+            (list 'and (distinct-pair (first x) (second x) (second (rest x)) (first x2) (second x2) (second (rest x2))) res)) '() seqi))
 
-(defn and-aux [x1 y1 status1 x2 y2 status2]
-  (list 'and (distinct-pair x1 y1 status1 x2 y2 status2) true))
-
-(defn distinct-cells
-  ([liste]
-    (let [liste (reverse liste)]
-      (list 'and true (distinct-cells (first liste) (rest liste) (rest liste)))))
-  ([pre verif backup]
-    (if (and (= (count backup) 1) (= (count verif) 2))
-      (let [[x1 y1 status1] pre
-          [x2 y2 status2] (first verif)]
-        (list 'and (and-aux x1 y1 status1 x2 y2 status2)))
-      (if (seq verif)
-        (let [[x1 y1 status1] pre
-          [x2 y2 status2] (first verif)]
-          (list 'and (and-aux x1 y1 status1 x2 y2 status2) (distinct-cells pre (rest verif) backup)))
-        (recur (first backup) (rest backup) (rest backup))))))
-      
-          
-      
+(defn distinct-celles1 [seqi elem]
+  (loop [a seqi res '()]
+    (if (seq a)
+      (recur (rest a) (list (distinct-pair (first (first a)) (second (first a)) (second (rest (first a))) (first elem) (second elem) (second (rest elem))) res))
+      res)))
 
 
+(defn distinct-celles1 [seqi elem]
+  (reduce (fn[res x]
+           (list 'and (distinct-pair (first x) (second x) (second (rest x)) (first elem) (second elem) (second (rest elem))) res )) 'true seqi))
+
+
+(distinct-celles1 '([1 1 {:status :empty}]
+                   [2 1 {:status :init :value 5}]
+                   [2 2 {:status :empty}]) [1 1 {:status :empty}])
+
+(defn distinct-cells [seqi]
+  (loop [a seqi res 'true]
+    (if (seq a)
+      ;;(if (contains? ([(first (first a)) (second (first a))] contains))
+        (recur (rest a) (list 'and (distinct-celles1 (rest a) (first a)) res))
+        res)))
 
 (fact
  (distinct-cells '([1 1 {:status :empty}]
@@ -275,6 +277,7 @@
                                                    (or (not x1y1b2) (or x1y1b3 false))))
                               true))
                     true))))
+
 
 (defn fetch-row
   "Récupère les cellules de la ligne `cy` de la `grille`."
@@ -339,11 +342,60 @@
         (list 'and (encode-vides grille)
               (list 'and (encode-rows grille)
                     (list 'and (encode-cols grille)
-                          (list 'and (encode-blocks grille))))))),
+                          (encode-blocks grille))))))
 
-;; (encode-sudoku ex-grille)
+;(count (encode-sudoku ex-grille))
 ;; => .... attention : formule énorme ! ....
 
-;(defn resolution [grille]
-;  (dpll (d/dcnf grille)))
 
+
+;; Fonction qui permet de décoder la valeur d'une cellule à partir du dpll
+(defn decode-value [cx cy m]
+  (reduce
+   +
+   0
+   (map
+    #(if (get m %1) %2 0)
+    (mkcell cx cy)
+    (iterate #(* 2 %) 1))))
+;; iterate permet d'obtenir les chiffres binaires
+;; mkcell renvoit donc la liste des 4 bits pour la cellule cx et cy
+
+(defn bin-to-normal[x]
+   (loop [a x, m (take 4 (iterate #(* 2 %) 1)) , res 0]
+     (if (seq a)
+       (recur (rest a) (rest m) (+ ( * (first a)(first m)) res))
+       res)))
+
+
+
+;;(get a 'x1y1b1)
+
+(take 4 (iterate #(* 2 %) 1))
+
+(defn decode-block [m b]
+  (let [cxb (inc (* (rem b 3) 3))
+        cyb (inc (* 3 (quot b 3)))]
+    (reduce
+     #(let [cx (+ cxb (rem %2 3))
+            cy (+ cyb (quot %2 3))
+            val-cell (decode-value cx cy m)]
+            ;; Il faut faire une vérification supplémentaire si c'est un solved ou un init
+
+            (if (= (:status (g/cell ex-grille cx cy)) :empty)
+              (conj %1 (g/mk-cell :solved val-cell))
+              (conj %1 (g/mk-cell val-cell))))
+     []
+     (range 9))))
+
+;;(decode-block a 4)
+
+(defn decode-grid [m]
+  (partition 3
+             (for [x (range 9)]
+               (decode-block m x))))
+
+
+
+
+;(decode-grid (dpll/dcnf (encode-sudoku ex-grille)))

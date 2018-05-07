@@ -35,3 +35,9 @@ exit
 (load-file /Users/paulinexia/Desktop/3I020/3I020_git/3I020/mrsudoku/src/mrsudoku/sat)
 (load-file "/Users/paulinexia/Desktop/3I020/3I020_git/3I020/mrsudoku/src/mrsudoku/sat")
 (load-file "/Users/paulinexia/Desktop/3I020/3I020_git/3I020/mrsudoku/src/mrsudoku/sat/encode.clj")
+(use 'clojure.repl)
+(use 'seesaw.core)
+(native!)
+(def f (frame :title "Learning to use SeeSaw"))
+(-> f pack! show!)
+exit

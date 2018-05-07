@@ -1,7 +1,14 @@
-(ns sudoku-hamissi-xia.core
-  (:gen-class)
+;;; # SAT Partie 2 : manipulations de formules propositionnelles
+
+;;; Ne pas oublier la dépendance suivante dans project.clj
+;;; [org.clojure/core.match "0.3.0-alpha5"]
+
+(ns mrsudoku.dpll
   (:require [clojure.core.match :refer [match]])
-  (:require [clojure.set :as set]))
+  (:require [clojure.set :as set])
+  (:require [mrsudoku.sat.encode :as encode])
+  (:require [mrsudoku.grid :as g]))
+
 
 (declare xor)
 (declare filter-trivial)
@@ -176,12 +183,14 @@
          ;; *** Simplification de l'implication ***
          (['==> false a] :seq) true
          (['==> true a] :seq) a
+         (['==> a false] :seq) (list 'not a)
+         (['==> false a] :seq) true
 
          ;; *** Simplification de l'equivalence ***
-         (['<=> true true] :seq) true
-         (['<=> false false] :seq) true
-         (['<=> true false] :seq) false
-         (['<=> false true] :seq) false
+         (['<=> a true] :seq) a
+         (['<=> true a] :seq) a
+         (['<=> a false] :seq) (list 'not a)
+         (['<=> false a] :seq) (list 'not a)
 
 
 
@@ -220,6 +229,38 @@
 
 ;;; ## Forme normale nenf
 ;; ###Cette nouvelle forme permet de remplacer la forme nnf où la formule peut exploser, le principe consiste donc à faire descendre les not à la racine de l'arbre
+
+
+(defn nnf' [f]
+  (match f
+    ;; not .. and
+    (['not (['and a b] :seq)] :seq)
+    (list 'or (nnf' (list 'not  a)) (nnf' (list 'not b)))
+    ;; not .. or
+    (['not (['or a b] :seq)] :seq)
+    (list 'and (nnf' (list 'not  a)) (nnf' (list 'not b)))
+
+    ;;not .. <=>
+    (['not (['<=> a b] :seq)] :seq)
+    (nnf' (list '<=> (list 'not a) b))
+
+    ;;not.. ==>
+    (['not (['=> a b] :seq)] :seq)
+    (nnf' (list 'and a (list 'not b)))
+
+    ;: not .. not
+    (['not (['not a] :seq)] :seq) (nnf' a)
+    ;; and ..
+    (['and a b] :seq) (list 'and (nnf' a) (nnf' b))
+    ;; or ..
+    (['or a b] :seq) (list 'or (nnf' a) (nnf' b))
+    ;; TODO ==> et <=>
+    (['==> a b] :seq) (list 'or (nnf' (list 'not a)) (nnf' b))
+    (['<=> a b] :seq) (list 'and (nnf' (list '==> a b)) (nnf' (list '==> b a)))
+    :else f))
+
+(defn nnf [f]
+  (nnf' (simplify f)))
 
 (defn nenf' [f]
   (match f
@@ -393,8 +434,8 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;EXO 2
-;;(defn filter-subsume[f]
-;;  (filter (f[x])))
+;(defn filter-subsume[f]
+ ;; (filter (f[x])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;EXO 3
@@ -458,25 +499,43 @@
     dnf))
 
 
+(defn cnf2 [f]
+  (match f
+    (['or a b] :seq) (distrib (list 'or (cnf' a)
+                                          (cnf' b)))
+    (['and a b] :seq) (list 'and (cnf' a)
+                               (cnf' b))
+    :else f))
 
+(defn cnf3 [f]
+  (cnf2 (nnf f)))
 
+(cnf3 '(<=> a (and b c)))
 
 (defn dcnf-aux [f equivs]
   (match f
          ([op a b] :seq)
-         (let [[a', equivs1] (if (symbol? a) [a equivs] (dcnf-aux a equivs))
-               [b', equivs2] (if (symbol? b) [b equivs] (dcnf-aux b equivs1))
+         (let [[a', equivs1] (dcnf-aux a equivs)
+               [b', equivs2] (dcnf-aux b equivs1)
                f' (list op a' b')]
            (if-let [eq (get equivs2 f')]
              [eq equivs2]
              ;;si on a pas trouvé la formule
-             (let [v (symbol (str "$"(inc (count equivs2))))]
-               [v (assoc equivs2 f' v)])))))
+             (let [v (symbol (str "$" (inc (count equivs2))))]
+               [v (assoc equivs2 f' v)])))
+         :else [f equivs]))
 
 
 
-(defn dcfn [f]
-  (dcnf-aux f))
+
+(defn dcnf [f]
+  (let [[var phi] (dcnf-aux f {})]
+    (set (mapcat
+          (fn [[a b]]
+            (let [b (if (= var b) true b)]
+              (setify-cnf (cnf3 (list '<=> a b))))
+              )
+          phi))))
 
 (dcnf-aux '(and a b) {})
 
@@ -544,6 +603,30 @@
 
 (find-1-literal '#{#{x (not g)} #{(not z)} #{z (not x)}})
 
+(defn make-clause [clause x not-x]
+  (cond
+   (contains? clause x) true
+   (contains? clause not-x) (disj clause not-x)
+   :else clause))
+
+(defn make-true-false [phi x not-x]
+  (reduce
+   (fn [phi' clause']
+     (case clause'
+       #{} (reduced nil)
+       true phi'
+       ;;else
+       (conj phi' clause')
+       ))
+   #{}
+   (map #(make-clause % x not-x) phi)))
+
+(defn make-true [phi x]
+  (make-true-false phi x (list 'not x)))
+
+(defn make-false [phi x]
+  (make-true-false phi (list 'not x) x))
+
 
 (defn rule-1-literal [phi]
   (if-let [litt (find-1-literal phi)]
@@ -561,15 +644,15 @@
     (loop [clause clause, m m]
         (if (seq clause)
            (let [[x, xsigne] (if (symbol? (first clause))
-                               [(first clause) "positive"]
-                               [(second (first clause)) "negative"])
+                               [(first clause) :positive]
+                               [(second (first clause)) :negative])
                signe (get m x)]
                (case signe
                    nil (recur (rest clause) (assoc m x xsigne))
-                   "positive" (recur (rest clause) (if (= xsigne :positive)
+                   :positive (recur (rest clause) (if (= xsigne :positive)
                                                        m
                                                        (assoc m x :supp)))
-                   "negative" (recur (rest clause) (if (= xsigne :negative)
+                   :negative (recur (rest clause) (if (= xsigne :negative)
                                                        m
                                                        (assoc m x :supp)))
                    :supp (recur (rest clause) m)))
@@ -577,11 +660,29 @@
                m)))
 
 
+
+;(defn find-neg-pos [phi]
+ ;   (some (fn [[x signe]]
+  ;          (if (not= signe :supp)
+   ;             [x signe]
+    ;            false))   (reduce find-np1 {} phi)))
+
 (defn find-neg-pos [phi]
-    (some (fn [[x signe]]
-            (if (not= signe :supp)
-                [x signe]
-                false)))   (reduce find-np1 {} phi))
+ (loop [phi phi nm {}]
+    (if-let [clause (first phi)]
+      (let [nm (reduce
+                #(let [[var kw] (cond
+                                 (symbol? %2) [%2 :positive]
+                                 :else [(second %2) :negative])]
+                   (if (contains? %1 var)
+                     (cond (= kw (get %1 var)) %1
+                           :else (assoc %1 var :supp))
+                     (assoc %1 var kw)))
+                nm
+                clause)]
+        (recur (rest phi) nm))
+      (some #(when (not (= :supp (second %))) %) nm))))
+
 
 ;;Exemple de fonction pour la commande some
 (defn my-some [f s]
@@ -595,8 +696,8 @@
 (defn rule-aff-neg [phi]
     (if-let [[x signe] (find-neg-pos phi)]
         (case signe
-            :positive (make-true phi x)
-            :negative (make-false phi x))
+            :positive [(make-true phi x) x true]
+            :negative [(make-false phi x)x false])
             ;;Pas de pos ou de neg
         nil))
 
@@ -620,39 +721,78 @@
             (if-let [xnb (get m x)]
                 (assoc m x (inc xnb))
                 (assoc m x 1)))) m clause))
-
             ;remplace le if-let
 
 (defn varfreqs [phi]
     (reduce varfreq1 {} phi))
 
 
-(defn max-val [m]
-    (loop [m m, xval nil, maxval 0]
-        (if (seq m)
-            (let [[y yval] (first m)]
-                (if (> yval xval)
-                    (recur (rest m) y yval)
-                    (recur (rest m) xval maxval)))
+;(defn max-val [m]
+ ;   (loop [m m, xval nil, maxval 0]
+  ;      (if (seq m)
+   ;         (let [[y yval] (first m)]
+    ;            (if (> yval xval)
+     ;               (recur (rest m) y yval)
+      ;              (recur (rest m) xval maxval)))
             ;;à la fin du let
-            maxval)))
+       ;     maxval)))
+
+;(defn max-splitter [phi]
+ ;   (max-val (varfreqs phi)))
+
+(defn max-val [m]
+  (loop [m m, xmax nil, max 0]
+    (if (seq m)
+      (let [[y yval] (first m)]
+        (if (> yval max)
+          (recur (rest m) y yval)
+          (recur (rest m) xmax max)))
+      ;;à la fin du let
+      xmax)))
 
 (defn max-splitter [phi]
-    (max-val (varfreqs phi)))
+  (max-val (varfreqs phi)))
+
+
+
+;(defn dpll
+ ; "prend une formule phi et retourne la map des variables/valeurs (instanciation) ou no si non satisfiable"
+  ;([phi] (dpll phi {} max-splitter))
+  ;([phi splitter] (dpll phi {} splitter))
+  ;([phi sat splitter]
+   ;(loop [phi phi, sat sat]
+    ; (if (empty? phi)
+     ;  sat ;;=> si le joueur a gagné
+      ; (if-let [[phi', x, xval] (rule-1-literal phi)] ;cherche dans une formule les clauses avec un seul littéral
+       ;  (recur phi' (assoc sat x xval))
+        ; ;Pour l'affirmative, la variable est tout le temps faux (resp. vrai)
+         ;On en cherche une, puisqu'on ne peut pas tout appliquer d'un coup
+ ;        (if-let [[phi', x, xval] (rule-aff-neg phi)]
+  ;         (recur phi' (assoc sat x xval))
+   ;        (let [x (splitter phi)]
+    ;         (or (let [phi-true (make-true phi x)]
+     ;              (and phi-true (dpll phi-true (assoc sat x true) splitter)))
+      ;           (let [phi-false (make-false phi x)]
+       ;            (and phi-false (dpll phi-false (assoc sat x false) splitter)))
+        ;         nil))))))))
 
 
 (defn dpll
-  "prend une formule phi et retourne la map des variables/valeurs (instanciation) ou no si non satisfiable"
+  "prend une formule ph: et retourne la map des variables/valeurs (instanciation) ou no si non satisfiable"
   ([phi] (dpll phi {} max-splitter))
   ([phi splitter] (dpll phi {} splitter))
   ([phi sat splitter]
    (loop [phi phi, sat sat]
+     ;; le joueur a gagné
      (if (empty? phi)
-       sat ;;=> si le joueur a gagné
-       (if-let [[phi', x, xval] (rule-1-literal phi)] ;cherche dans une formule les clauses avec un seul littéral
-         (recur phi' (assoc sat x xval))
-         ;Pour l'affirmative, la variable est tout le temps faux (resp. vrai)
-         ;On en cherche une, puisqu'on ne peut pas tout appliquer d'un coup
+       sat
+       (if-let [[phi', x, xval] (rule-1-literal phi)]
+         ;;=> cherche dans une formule les clauses avec un seul littéral
+         (if (nil? phi')
+           nil
+           (recur phi' (assoc sat x xval)))
+         ;;Pour l'affirmative, la variable est tout le temps faux (resp. vrai)
+         ;;On en cherche une, puisqu'on ne peut pas tout appliquer d'un coup
          (if-let [[phi', x, xval] (rule-aff-neg phi)]
            (recur phi' (assoc sat x xval))
            (let [x (splitter phi)]
@@ -666,6 +806,21 @@
 
 
 
+
+;(count (flatten (encode/encode-sudoku encode/ex-grille)))
+
+(def s (dcnf (encode/encode-sudoku encode/ex-grille)))
+
+
+;(time(dpll s))
+
+(defn s2 []
+  (println "laaaaaa")
+  (println (count s))
+  (encode/decode-grid (dpll s)))
+
+;(do (println "voici le résultat obtenu ")
+ ; (print (g/grid->str s2)))
 ;; EXERCICE : retirer les clauses qui contiennent un littéral et sa négation
 ;; (a ou non a) => vrai
 ;; (a et non a) => faux

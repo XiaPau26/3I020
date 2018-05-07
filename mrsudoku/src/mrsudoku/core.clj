@@ -6,6 +6,7 @@
             [mrsudoku.control :as control]))
 
 (defn show-sudoku! [grid]
+  ;; ctrl correspond à un atom de la grille
   (let [ctrl (control/mk-grid-controller grid)
         main-frame (v/mk-main-frame grid ctrl)]
     (invoke-later
@@ -19,5 +20,5 @@
   [& args]
   (println "Welcome to MrSudoku...")
   (let [grid (var-get #'g/sudoku-grid)]
-    (show-sudoku! grid)))
+    (show-sudoku! grid))) 
 
